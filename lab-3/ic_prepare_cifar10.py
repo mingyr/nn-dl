@@ -3,8 +3,6 @@ import numpy as np
 import tensorflow as tf
 import cifar10
 
-from tensorflow.examples.tutorials.mnist import input_data
-
 def float_feature(value):
     return tf.train.Feature(float_list = tf.train.FloatList(value = value))
 
@@ -18,8 +16,6 @@ save_path = 'data/cifar-10'
 
 print("Loading CIFAR10 dataset")
 cifar10.extract()
-
-data = input_data.read_data_sets("data/CIFAR-10/", one_hot=False)
 
 print('beginning prepare CIFAR-10 tfrecords for training')
 writer = tf.io.TFRecordWriter(os.path.join(save_path, 'cifar-10-train.tfr'))
