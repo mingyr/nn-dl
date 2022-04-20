@@ -32,7 +32,7 @@ class Encoder(snt.AbstractModule):
             y = MaxPool()(y)
             
             y = snt.BatchFlatten()(y)
-            y = tf.nn.relu(self._lin(y))
+            y = tf.math.sigmoid(self._lin(y))
 
             return y
 
