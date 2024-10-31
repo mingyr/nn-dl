@@ -82,7 +82,7 @@ def save_model(module):
     tf.saved_model.save(to_save, save_path)
 
 # 训练模型
-# @tf.function
+@tf.function
 def main():
     num_epochs = 20
     step = np.int64(0)
