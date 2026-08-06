@@ -2,53 +2,39 @@ import os
 import numpy as np
 import tensorflow as tf
 import sonnet as snt
-
-class Pooling(snt.Module):
-    def __init__(self, pool=None, k=2, padding='SAME', name="pooling"):
-        super(Pooling, self).__init__(name=name)
-        self._pool = pool        
-        self._k = k
-        self._padding = padding
-
-    def __call__(self, x):
-        if self._pool == 'max':
-            return tf.nn.max_pool2d(x, self._k, self._k, self._padding)
-        elif pool == 'avg':
-            return tf.nn.avg_pool2d(x, self._k, self._k, self._padding)
-        else:
-            return lambda x: x
+from functools import partial
 
 class Model(snt.Module):
     def __init__(self, num_classes, filter_size=5, name="model"):
         super(Model, self).__init__(name=name)
-        self._num_classes = num_classes
-        self._filter_size = filter_size
-    
-    @snt.once
-    def _initialize(self):    
-        self._conv1 = snt.Conv2D(32, self._filter_size, name="first_conv_layer")
-        self._pool1 = Pooling('max', name="first_max_pool_layer")
-        
-        self._conv2 = snt.Conv2D(64, self._filter_size, name="second_conv_layer")
-        self._pool2 = Pooling('max', name="second_pool_layer")            
+       
+        self._conv1 = snt.Conv2D(32, filter_size, name="conv1")
+        self._relu1 = partial(tf.nn.relu, name="relu1")
+        self._pool1 = partial(tf.nn.max_pool2d, ksize=2, strides=2, 
+                              padding="SAME", name="pool1")
 
+        self._conv2 = snt.Conv2D(64, filter_size, name="conv2")
+        self._relu2 = partial(tf.nn.relu, name="relu2")
+        self._pool2 = partial(tf.nn.max_pool2d, ksize=2, strides=2, 
+                              padding="SAME", name="pool2")
 
-        self._lin = snt.Linear(256, name="fully_conn_layer")
-        self._output = snt.Linear(self._num_classes, name="output_layer")
+        self._lin = snt.Linear(256, name="lin")
+        self._relu3 = partial(tf.nn.relu, name="relu3")
+        self._output = snt.Linear(num_classes, name="output")
             
-    def __call__(self, x):
-        self._initialize()
-        
-        y = tf.nn.relu(self._conv1(x))
+    def __call__(self, x):        
+        y = self._conv1(x)
+        y = self._relu1(y)
         y = self._pool1(y)
         
-        y = tf.nn.relu(self._conv2(y))
+        y = self._conv2(y)
+        y = self._relu2(y)
         y = self._pool2(y)
         
-
-        y = snt.Flatten()(y)
+        y = snt.Flatten(name="flatten")(y)
         
-        y = tf.nn.relu(self._lin(y))
+        y = self._lin(y)
+        y = self._relu3(y)
         
         return self._output(y)
 
@@ -57,15 +43,16 @@ def test():
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    x = tf.random.normal([32, 28, 28, 1])        
-    model = tf.function(Model(10))
+    input_spec = [tf.TensorSpec(shape=[None, 28, 28, 1], dtype=tf.float32)]
+    model = tf.function(Model(10), input_signature=input_spec)
 
-    summary_writer = tf.summary.create_file_writer(log_dir)
-    tf.summary.trace_on(graph=True, profiler=False)
+    x = tf.random.normal([32, 28, 28, 1])        
     y = model(x)
+    
+    summary_writer = tf.summary.create_file_writer(log_dir)
     with summary_writer.as_default():
-        tf.summary.trace_export(name="model_trace", step=0, profiler_outdir=log_dir)
-    tf.summary.trace_off()
+        tf.summary.graph(model.get_concrete_function().graph)
+    
         
 if __name__ == "__main__":
     test()        
