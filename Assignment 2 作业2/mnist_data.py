@@ -2,7 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import sonnet as snt
-import tfmpl
+import tf_matplotlib as tfmpl
 
 class Dataset(snt.Module):
     def __init__(self, batch_size, image_dims, num_epochs=-1, name='dataset'):

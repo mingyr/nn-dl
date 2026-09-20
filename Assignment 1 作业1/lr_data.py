@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-import tfmpl
+import tf_matplotlib as tfmpl
 
 log_dir = "output-data"
 if not os.path.exists(log_dir):
